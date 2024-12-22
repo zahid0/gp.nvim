@@ -494,6 +494,10 @@ agents, allowing you to directly select the desired agent from a list. Works
 seamlessly with telescope if available.
 
 
+:GpListAgents                                                    *:GpListAgents*
+
+Lists all available agents.
+
 IMAGE COMMANDS                                        *gp.nvim-image-commands*
 
 

@@ -377,6 +377,11 @@ Lists all available agents.
 
 Opens a selection interface using `vim.ui.select` to choose from all available agents, allowing you to directly select the desired agent from a list. Works seamlessly with telescope if available.
 
+#### `:GpListAgents` <!-- {doc=:GpListAgents}  -->
+
+Lists all available agents.
+
+
 ## Image commands
 
 #### `:GpImage` <!-- {doc=:GpImage}  -->
