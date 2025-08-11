@@ -293,4 +293,103 @@ _H.create_user_command = function(cmd_name, cmd_func, completion, desc)
 	})
 end
 
+function _H.open_menu(items, opts)
+  opts = opts or {}
+  local title = opts.title or "Select an option:"
+  local border = opts.border or "rounded"
+  local selected = opts.selected -- Optional preselected item
+
+  -- Find selected item in list if provided
+  local selected_line = 0
+  if selected then
+    for i, item in ipairs(items) do
+      if item == selected then
+        selected_line = i
+        break
+      end
+    end
+  end
+
+  -- Create a new buffer
+  local buf = vim.api.nvim_create_buf(false, true)
+
+  -- Set buffer options
+  vim.api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
+  vim.api.nvim_buf_set_option(buf, 'modifiable', true)
+
+  -- Combine title and items
+  local lines = {title, ""}
+  for _, item in ipairs(items) do
+    table.insert(lines, item)
+  end
+
+  -- Add content to buffer
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+
+  -- Make buffer unmodifiable after setup
+  vim.api.nvim_buf_set_option(buf, 'modifiable', false)
+
+  -- Set key mappings
+  local function close_window()
+    if win and vim.api.nvim_win_is_valid(win) then
+      vim.api.nvim_win_close(win, true)
+    end
+  end
+
+  vim.api.nvim_buf_set_keymap(buf, 'n', '<CR>', '', {
+    callback = function()
+      local line = vim.api.nvim_win_get_cursor(win)[1] - 2 -- account for title and empty line
+      if line > 0 and line <= #items then
+        close_window()
+        if opts.on_select then
+          opts.on_select(items[line], line)
+        else
+          print("Selected: " .. items[line])
+        end
+      end
+    end
+  })
+
+  vim.api.nvim_buf_set_keymap(buf, 'n', 'q', '', {
+    callback = close_window
+  })
+
+  vim.api.nvim_buf_set_keymap(buf, 'n', '<Esc>', '', {
+    callback = close_window
+  })
+
+  -- Create a floating window
+  local width = math.max(unpack(vim.tbl_map(function(item)
+    return #item
+  end, lines))) + 4
+
+  local height = #items + 3
+
+  win = vim.api.nvim_open_win(buf, true, {
+    relative = 'editor',
+    width = width,
+    height = height,
+    col = math.floor((vim.o.columns - width) / 2),
+    row = math.floor((vim.o.lines - height) / 2),
+    style = 'minimal',
+    border = border
+  })
+
+  -- Set window options
+  vim.api.nvim_win_set_option(win, 'number', false)
+  vim.api.nvim_win_set_option(win, 'relativenumber', false)
+  vim.api.nvim_win_set_option(win, 'cursorline', true)
+
+  -- Highlight the title
+  vim.api.nvim_buf_add_highlight(buf, -1, 'Title', 0, 0, -1)
+
+  -- Highlight selected item if found
+  if selected_line > 0 then
+    -- Position cursor on selected item (adding 2 for title and empty line)
+    vim.api.nvim_win_set_cursor(win, {selected_line + 2, 0})
+    -- Add custom highlight for the selected item
+    vim.api.nvim_buf_add_highlight(buf, -1, 'Visual', selected_line + 1, 0, -1)
+  end
+end
+
 return _H

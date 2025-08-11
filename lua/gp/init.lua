@@ -1562,17 +1562,33 @@ M.cmd.Agent = function(params)
 end
 
 M.cmd.ListAgents = function()
-	local messages = { "List of available agents (* - Chat Agent, # - Command Agent):" }
+	local buf = vim.api.nvim_get_current_buf()
+	local file_name = vim.api.nvim_buf_get_name(buf)
+	local is_chat = M.not_chat(buf, file_name) == nil
+	local selected_agent = M._state.command_agent
+	if is_chat then
+	    selected_agent = M._state.chat_agent
+	end
+
+	local messages = {}
 	for name, agent in pairs(M.agents) do
-		if name == M._state.chat_agent then
-			table.insert(messages, "* " .. name)
-		elseif name == M._state.command_agent then
-			table.insert(messages, "# " .. name)
-		else
-			table.insert(messages, "- " .. name)
+	    if agent.chat == is_chat then
+			table.insert(messages, name)
 		end
 	end
-	M.logger.info(table.concat(messages, "\n"))
+	table.sort(messages)
+	M.helpers.open_menu(messages, {
+	    title = "Select the Agent:",
+	    selected = selected_agent,
+		on_select = function(agent_name, index)
+			local agent = M.agents[agent_name]
+			if agent.chat then
+			    M.refresh_state({ chat_agent = agent_name })
+			else
+			    M.refresh_state({ command_agent = agent_name })
+			end
+		end
+	})
 end
 
 M.cmd.NextAgent = function()
